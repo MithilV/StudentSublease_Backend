@@ -3,7 +3,7 @@ from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from django.http.response import JsonResponse
 from django.http import HttpResponse
-from sublease.models import Amenity, StudentListing
+from sublease.models import Amenity, StudentListing, StudentListingImages
 from utils.models import Address
 from users.models import SubleaseUser
 from datetime import datetime
@@ -18,6 +18,10 @@ def home(request):
 
 @csrf_exempt
 def create_listing(request):
+    print("POST PARAMETERS " , request.POST)
+    print("")
+    print("FILE PARAMETERS: " , request.FILES)
+
     if (request.method == "POST" and 'title' in request.POST and 'street' in request.POST and 'city' in request.POST and 'state' in request.POST and 
         'zip' in request.POST and 'lat' in request.POST and 'long' in request.POST and 'lister_pk' in request.POST and 'description' in request.POST and 
         'num_bed' in request.POST and 'num_bath' in request.POST and 'gender_preference' in request.POST and 
@@ -32,13 +36,19 @@ def create_listing(request):
         amenities = Amenity.objects.all()
         start_date = datetime.strptime(request.POST['start_date'], '%Y-%m-%d')
         end_date = datetime.strptime(request.POST['end_date'], '%Y-%m-%d')
-        new_listing = StudentListing.objects.create(title=request.POST['title'], address=address, lister=lister, description=request.POST['description'], num_bed=request.POST['num_bed'], num_bath=request.POST['num_bath'], 
+        
+        
+        
+        
+        new_listing = StudentListing.objects.create(title=request.POST['title'], address=address, lister=lister, description=request.POST['description'], num_bed=request.POST['num_bed'], num_bath=request.POST['num_bath'],
                             gender_preference=request.POST['gender_preference'], start_date=start_date, end_date=end_date, rent_per_month=request.POST['rent_per_month'], num_tenants=request.POST['num_tenants'], fees=request.POST['fees'])
         new_listing.amenities.set(amenities)
+        for image in request.FILES.getlist("file"):
+            StudentListingImages.objects.create(listing=new_listing,image=image)
         new_listing.save()
-        json_response_listing = new_listing.json_representation()
-        json_response_listing["distance"] = 0.0
-        return JsonResponse(json_response_listing, status=201)
+        print("")
+        print("New Listing Created: " , new_listing.json_representation())
+        return JsonResponse(new_listing.json_representation(), status=201)
     else:
         return HttpResponse(status=400)
 
